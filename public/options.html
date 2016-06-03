@@ -130,6 +130,15 @@
             <p>By default Chosen's search is case-insensitive. Setting this option to <code class="language-javascript">true</code> makes the search case-sensitive.</p>
           </td>
         </tr>
+        <tr>
+          <td>normalize_search_text</td>
+          <td><pre><code class="language-javascript">function(search_text) {
+  return search_text
+}</code></pre></td>
+          <td>
+            <p>By default, Chosen performs no text normalization. This allows you to provide a callback performing your own alterations to the provided search_text argument, i.e. for transliteration. Callback receives a <code class="language-javascript">string</code> and must return a <code class="language-javascript">string</code>.</p>
+          </td>
+        </tr>
       </table>
 
       <h2><a name="attributes" class="anchor" href="#attributes">Attributes</a></h2>

@@ -34,6 +34,7 @@ class AbstractChosen
     @include_group_label_in_selected = @options.include_group_label_in_selected || false
     @max_shown_results = @options.max_shown_results || Number.POSITIVE_INFINITY
     @case_sensitive_search = @options.case_sensitive_search || false
+    @normalize_search_text = @options.normalize_search_text || (search_text) -> search_text
 
   set_default_text: ->
     if @form_field.getAttribute("data-placeholder")
@@ -155,8 +156,10 @@ class AbstractChosen
     results = 0
 
     searchText = this.get_search_text()
-    escapedSearchText = searchText.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")
-    zregex = new RegExp(escapedSearchText, 'i')
+    normalizedSearchText = this.normalize_search_text(searchText);
+    regex_anchor = if @search_contains then "" else "\\b"
+    escapedSearchText = normalizedSearchText.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")
+    zregex = new RegExp(regex_anchor + escapedSearchText, 'i')
     regex = this.get_search_regex(escapedSearchText)
 
     for option in @results_data
@@ -178,13 +181,30 @@ class AbstractChosen
         option.search_text = if option.group then option.label else option.html
 
         unless option.group and not @group_search
-          option.search_match = this.search_string_match(option.search_text, regex)
+          option.normalized_search_text = this.normalize_search_text(option.search_text)
+          option.search_match = this.search_string_match(option.normalized_search_text, regex)
           results += 1 if option.search_match and not option.group
 
           if option.search_match
             if searchText.length
-              startpos = option.search_text.search zregex
-              text = option.search_text.substr(0, startpos + searchText.length) + '</em>' + option.search_text.substr(startpos + searchText.length)
+              startpos = option.normalized_search_text.search zregex
+              poslength = normalizedSearchText.length
+
+              # If any normalization changed the search_text, perform a better
+              # logic to highlight results
+              if option.normalized_search_text != option.search_text
+                for i in [0..option.search_text.length - 1] by 1
+                  if zregex.test(this.normalize_search_text(option.search_text.substr(i))) is false
+                    startpos = i - 1
+                    break
+
+                # this is not - 1 because i is used as length, not as index
+                for i in [1..option.search_text.length - startpos] by 1
+                  if zregex.test(this.normalize_search_text(option.search_text.substr(startpos, i))) isnt false
+                    poslength = i
+                    break
+
+              text = option.search_text.substr(0, startpos + poslength) + '</em>' + option.search_text.substr(startpos + poslength)
               option.search_text = text.substr(0, startpos) + '<em>' + text.substr(startpos)
 
             results_group.group_match = true if results_group?
