@@ -160,6 +160,27 @@ class AbstractChosen
     else
       this.results_show()
 
+  highlight_option: (option, normalizedSearchText, zregex) ->
+    startpos = option.normalized_search_text.search zregex
+    poslength = normalizedSearchText.length
+
+    # If any normalization changed the search_text, perform a better
+    # logic to highlight results
+    if option.normalized_search_text != option.search_text
+      for i in [0..option.search_text.length - 1] by 1
+        if zregex.test(this.normalize_search_text(option.search_text.substr(i))) is false
+          startpos = i - 1
+          break
+
+      # this is not - 1 because i is used as length, not as index
+      for i in [1..option.search_text.length - startpos] by 1
+        if zregex.test(this.normalize_search_text(option.search_text.substr(startpos, i))) isnt false
+          poslength = i
+          break
+
+    text = option.search_text.substr(0, startpos + poslength) + '</em>' + option.search_text.substr(startpos + poslength)
+    option.search_text = text.substr(0, startpos) + '<em>' + text.substr(startpos)
+
   winnow_results: ->
     this.no_results_clear()
 
@@ -197,25 +218,7 @@ class AbstractChosen
 
           if option.search_match
             if searchText.length
-              startpos = option.normalized_search_text.search zregex
-              poslength = normalizedSearchText.length
-
-              # If any normalization changed the search_text, perform a better
-              # logic to highlight results
-              if option.normalized_search_text != option.search_text
-                for i in [0..option.search_text.length - 1] by 1
-                  if zregex.test(this.normalize_search_text(option.search_text.substr(i))) is false
-                    startpos = i - 1
-                    break
-
-                # this is not - 1 because i is used as length, not as index
-                for i in [1..option.search_text.length - startpos] by 1
-                  if zregex.test(this.normalize_search_text(option.search_text.substr(startpos, i))) isnt false
-                    poslength = i
-                    break
-
-              text = option.search_text.substr(0, startpos + poslength) + '</em>' + option.search_text.substr(startpos + poslength)
-              option.search_text = text.substr(0, startpos) + '<em>' + text.substr(startpos)
+              this.highlight_option(option, normalizedSearchText, zregex)
 
             results_group.group_match = true if results_group?
 
