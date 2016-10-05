@@ -152,21 +152,21 @@ class AbstractChosen
     else
       this.results_show()
 
-  highlight_option: (option, normalizedSearchText, zregex) ->
-    startpos = option.normalized_search_text.search zregex
+  highlight_option: (option, normalizedSearchText, highlightRegex) ->
+    startpos = option.normalized_search_text.search highlightRegex
     poslength = normalizedSearchText.length
 
     # If any normalization changed the search_text, perform a better
     # logic to highlight results
     if option.normalized_search_text != option.search_text
       for i in [0..option.search_text.length - 1] by 1
-        if zregex.test(this.normalize_search_text(option.search_text.substr(i))) is false
+        if highlightRegex.test(this.normalize_search_text(option.search_text.substr(i))) is false
           startpos = i - 1
           break
 
       # this is not - 1 because i is used as length, not as index
       for i in [1..option.search_text.length - startpos] by 1
-        if zregex.test(this.normalize_search_text(option.search_text.substr(startpos, i))) isnt false
+        if highlightRegex.test(this.normalize_search_text(option.search_text.substr(startpos, i))) isnt false
           poslength = i
           break
 
@@ -181,7 +181,6 @@ class AbstractChosen
     searchText = this.get_search_text()
     normalizedSearchText = this.normalize_search_text(searchText);
     escapedSearchText = normalizedSearchText.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")
-    zregex = new RegExp(escapedSearchText, 'i')
     regex = this.get_search_regex(escapedSearchText)
     highlightRegex = this.get_highlight_regex(escapedSearchText)
 
@@ -210,7 +209,7 @@ class AbstractChosen
 
           if option.search_match
             if searchText.length
-              this.highlight_option(option, normalizedSearchText, zregex)
+              this.highlight_option(option, normalizedSearchText, highlightRegex)
 
             results_group.group_match = true if results_group?
 
